@@ -56,7 +56,6 @@ export default function ArticleList({ data }: Props) {
   const [lang, setLang] = useState<'zh' | 'en'>('en');
   const t = translations[lang];
   const items = data.items;
-  const isWeekly = data.kind === 'weekly';
 
   // 统一使用 Cormorant SC 字体
   const getFont = () => 'var(--font-cormorant-sc)';

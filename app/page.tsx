@@ -42,7 +42,7 @@ export default async function Page() {
   ]
 
   // 为每篇文章添加封面图（如果没有的话）
-  items = items.map((item: any, index: number) => ({
+  items = items.map((item: Record<string, unknown>, index: number) => ({
     ...item,
     cover: item.cover || placeholderImages[index % placeholderImages.length]
   }))
