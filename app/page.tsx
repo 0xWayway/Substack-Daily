@@ -1,103 +1,104 @@
-import Image from "next/image";
+import { supabase } from '@/lib/supabaseClient'
+import ArticleList from './components/ArticleList'
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+export default async function Page() {
+  const { data, error } = await supabase
+    .from('picks')
+    .select('*')
+    .order('the_date', { ascending: false })
+    .limit(1)
+    .single()
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+  if (error) {
+    return <div className="p-6 text-red-600">加载失败，请稍后重试。</div>
+  }
+
+  if (!data) {
+    return <div className="p-6 text-neutral-600">暂无数据，请稍后再来。</div>
+  }
+
+  // 确保 items 是数组
+  let items = []
+  
+  try {
+    if (Array.isArray(data.items)) {
+      items = data.items
+    } else if (data.items?.message?.content?.articles) {
+      items = data.items.message.content.articles
+    } else if (typeof data.items === 'string') {
+      items = JSON.parse(data.items)
+    }
+  } catch (e) {
+    console.error('Failed to parse items:', e)
+  }
+
+  // 艺术风格配图列表
+  const placeholderImages = [
+    'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1200&h=900&fit=crop', // 保留：Van Gogh style landscape
+    'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=1200&h=900&fit=crop', // Pointillism/impressionist water scene
+    'https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=1200&h=900&fit=crop', // Colorful street art mural
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=900&fit=crop', // Mountain vista
+    'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1200&h=900&fit=crop', // Minimalist architectural door
+  ]
+
+  // 为每篇文章添加封面图（如果没有的话）
+  items = items.map((item: any, index: number) => ({
+    ...item,
+    cover: item.cover || placeholderImages[index % placeholderImages.length]
+  }))
+
+  // 确保至少有5篇文章
+  const additionalArticles = [
+    {
+      title: 'October 2025 Documentary Review 10-Pack',
+      author: 'Stephen Silver',
+      date: '2025-10-08',
+      url: 'https://stephensilver.substack.com/p/october-2025-documentary-review-10',
+      reason: 'A curated collection of 10 documentaries featuring diverse themes, critical perspectives, and hidden gems that challenge mainstream narratives.',
+      summary: [
+        'Diverse thematic selection breaks through genre limitations',
+        'Critical analysis encourages conscious viewing beyond passive consumption',
+        'Spotlights overlooked treasures with unique visual language and fresh angles'
+      ]
+    },
+    {
+      title: 'October 8 and The Encampments',
+      author: 'Stephen Silver',
+      date: '2025-10-08',
+      url: 'https://stephensilver.substack.com/p/october-8-and-the-encampments-have',
+      reason: 'A comparative analysis of two documentaries examining the Israeli-Palestinian conflict through multiple perspectives, revealing power structures and narrative control.',
+      summary: [
+        'Breaks binary opposition by presenting multiple conflict viewpoints',
+        'Examines who controls the narrative and camera positioning',
+        'Comparative approach reveals deeper structural differences'
+      ]
+    }
+  ]
+  
+  while (items.length < 5) {
+    const article = additionalArticles[items.length - 3] || {
+      title: `Example Article ${items.length + 1}`,
+      author: 'Example Author',
+      date: new Date().toISOString().split('T')[0],
+      url: '#',
+      reason: 'This is an example article for layout demonstration.',
+      summary: [
+        'Example point one: showcase article layout',
+        'Example point two: test responsive design',
+        'Example point three: verify visual effects'
+      ]
+    }
+    items.push({
+      ...article,
+      cover: placeholderImages[items.length % placeholderImages.length]
+    })
+  }
+
+  const formattedData = {
+    the_date: data.the_date,
+    kind: data.kind,
+    items: items.slice(0, 5) // 只取前5篇
+  }
+
+  return <ArticleList data={formattedData} />
 }
